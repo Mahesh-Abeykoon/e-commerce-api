@@ -1,25 +1,13 @@
-const User = require("../models/User");
+const userService = require("../services/user-service");
 
 // Register new user
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-
-    if (!["customer", "seller", "admin"].includes(role)) {
-      return res.status(400).json({ error: "Invalid role" });
-    }
-
-    if (await User.findOne({ email })) {
-      return res.status(400).json({ error: "Email already exists" });
-    }
-
-    const user = new User({ name, email, password, role });
-    await user.save();
-
-    const token = await user.generateAuthToken();
-    res.status(201).json({ user, token });
+    const result = await userService.registerUser({ name, email, password, role });
+    res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -27,19 +15,17 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findByCredentials(email, password);
-    const token = await user.generateAuthToken();
-    res.json({ user, token });
+    const result = await userService.loginUser(email, password);
+    res.json(result);
   } catch (error) {
     res.status(400).json({ error: "Invalid email or password" });
   }
 };
 
-// Logout (single session)
+// Logout user
 const logout = async (req, res) => {
   try {
-    req.user.tokens = req.user.tokens.filter((t) => t.token !== req.token);
-    await req.user.save();
+    await userService.logoutUser(req.user, req.token);
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -49,8 +35,7 @@ const logout = async (req, res) => {
 // Logout all sessions
 const logoutAll = async (req, res) => {
   try {
-    req.user.tokens = [];
-    await req.user.save();
+    await userService.logoutAllSessions(req.user);
     res.json({ message: "Logged out from all devices" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -58,8 +43,8 @@ const logoutAll = async (req, res) => {
 };
 
 // Get user profile
-const getProfile = async (req, res) => {
-  res.json(req.user);
+const getProfile = (req, res) => {
+  res.json(userService.getUserProfile(req.user));
 };
 
 module.exports = { register, login, logout, logoutAll, getProfile };
