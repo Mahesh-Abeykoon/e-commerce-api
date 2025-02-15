@@ -62,6 +62,13 @@ userSchema.methods.generateAuthToken = async function () {
   });
 
   this.tokens = this.tokens.concat({ token });
+
+  // Keep only the last 5 tokens
+  // this.tokens = this.tokens.slice(-4).concat({ token });
+
+  //only store the latest token
+  // this.tokens = [{ token }];
+
   await this.save();
 
   return token;
