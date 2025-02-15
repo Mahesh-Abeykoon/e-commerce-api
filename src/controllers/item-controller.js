@@ -1,75 +1,53 @@
-const Item = require("../models/Item");
+const itemService = require("../services/item-service");
 
-// Create a new item (Admin/Seller only)
-const createItem = async (req, res) => {
+// Create an item
+const createItem = async (req, res, next) => {
   try {
-    if (req.user.role !== "seller" && req.user.role !== "admin") {
-      return res.status(403).json({ error: "Only sellers or admins can add items" });
-    }
-
-    const item = new Item({ ...req.body, createdBy: req.user._id });
-    await item.save();
+    const item = await itemService.createItem(req.user, req.body);
     res.status(201).json(item);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Get all items (Customers can view)
-const getAllItems = async (req, res) => {
+// Get all items with pagination & filtering
+const getAllItems = async (req, res, next) => {
   try {
-    const items = await Item.find();
+    const { page = 1, limit = 10, category } = req.query;
+    const items = await itemService.getAllItems(page, limit, category);
     res.json(items);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Get a single item
-const getItemById = async (req, res) => {
+// Get item by ID
+const getItemById = async (req, res, next) => {
   try {
-    const item = await Item.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: "Item not found" });
+    const item = await itemService.getItemById(req.params.id);
     res.json(item);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Update an item (Only seller/admin who created it)
-const updateItem = async (req, res) => {
+// Update item
+const updateItem = async (req, res, next) => {
   try {
-    const item = await Item.findById(req.params.id);
-
-    if (!item) return res.status(404).json({ error: "Item not found" });
-
-    if (item.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: "You can only update your own items" });
-    }
-
-    Object.assign(item, req.body);
-    await item.save();
-    res.json(item);
+    const updatedItem = await itemService.updateItem(req.user, req.params.id, req.body);
+    res.json(updatedItem);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Delete an item (Only seller/admin who created it)
-const deleteItem = async (req, res) => {
+// Soft Delete item (Mark as deleted instead of hard delete)
+const deleteItem = async (req, res, next) => {
   try {
-    const item = await Item.findById(req.params.id);
-
-    if (!item) return res.status(404).json({ error: "Item not found" });
-
-    if (item.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: "You can only delete your own items" });
-    }
-
-    await item.deleteOne();
+    await itemService.deleteItem(req.user, req.params.id);
     res.json({ message: "Item deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
