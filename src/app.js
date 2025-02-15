@@ -6,6 +6,10 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error-handler');
 
+const userRoutes = require("./routes/user-routes");
+const itemRoutes = require("./routes/item-routes");
+const cartRoutes = require("./routes/cart-routes");
+
 require('dotenv').config();
 
 // Connect to MongoDB
@@ -28,8 +32,9 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Routes
-app.use('/api/users', require('./routes/user-routes'));
-app.use('/api/items', require('./routes/item-routes'));
+app.use("/api/users", userRoutes);
+app.use("/api/items", itemRoutes);
+app.use("/api/cart", cartRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);
