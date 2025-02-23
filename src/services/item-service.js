@@ -11,8 +11,18 @@ const createItem = async (user, data) => {
   return item;
 };
 
-const getAllItems = async (page, limit, category) => {
-  const query = category ? { category } : {};
+const getAllItems = async (user, page, limit, category) => {
+  const query = {};
+
+  if (category) {
+    query.category = category;
+  }
+
+  // Sellers should only see their own items
+  if (user.role === "seller") {
+    query.createdBy = user._id;
+  }
+
   return await Item.find(query)
     .skip((page - 1) * limit)
     .limit(Number(limit))
@@ -28,7 +38,9 @@ const getItemById = async (id) => {
 const updateItem = async (user, id, data) => {
   const item = await Item.findById(id);
   if (!item) throw new CustomError(404, "Item not found");
-  if (item.createdBy.toString() !== user._id.toString()) {
+
+  // Only allow the seller who created the item or an admin to update
+  if (item.createdBy.toString() !== user._id.toString() && user.role !== "admin") {
     throw new CustomError(403, "You can only update your own items");
   }
 
@@ -41,7 +53,9 @@ const updateItem = async (user, id, data) => {
 const deleteItem = async (user, id) => {
   const item = await Item.findById(id);
   if (!item) throw new CustomError(404, "Item not found");
-  if (item.createdBy.toString() !== user._id.toString()) {
+
+  // Only allow the seller who created the item or an admin to delete
+  if (item.createdBy.toString() !== user._id.toString() && user.role !== "admin") {
     throw new CustomError(403, "You can only delete your own items");
   }
 

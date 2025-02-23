@@ -14,7 +14,7 @@ const createItem = async (req, res, next) => {
 const getAllItems = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, category } = req.query;
-    const items = await itemService.getAllItems(page, limit, category);
+    const items = await itemService.getAllItems(req.user, page, limit, category);
     res.json(items);
   } catch (error) {
     next(error);
